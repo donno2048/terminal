@@ -1210,7 +1210,11 @@ void SCREEN_INFORMATION::_InternalSetViewportSize(const COORD* const pcoordSize,
     }
 
     // Bottom and right cannot pass the final characters in the array.
-    srNewViewport.Right = std::min(srNewViewport.Right, gsl::narrow<SHORT>(coordScreenBufferSize.X - 1));
+    const SHORT offRightDelta = srNewViewport.Right - (coordScreenBufferSize.X - 1);
+    if (offRightDelta > 0){
+        srNewViewport.Right -= offRightDelta;
+        srNewViewport.Left = std::max<SHORT>(0, srNewViewport.Left - offRightDelta);
+    }
     srNewViewport.Bottom = std::min(srNewViewport.Bottom, gsl::narrow<SHORT>(coordScreenBufferSize.Y - 1));
 
     // See MSFT:19917443
