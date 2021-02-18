@@ -964,7 +964,10 @@ void Terminal::SetWriteInputCallback(std::function<void(std::wstring&)> pfn) noe
 {
     _pfnWriteInput.swap(pfn);
 }
-
+void Terminal::SetWarningBellCallback(std::function<void()> pfn) noexcept
+{
+    _pfnWarningBell.swap(pfn);
+}
 void Terminal::SetTitleChangedCallback(std::function<void(const std::wstring_view&)> pfn) noexcept
 {
     _pfnTitleChanged.swap(pfn);
