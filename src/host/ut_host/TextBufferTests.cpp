@@ -148,6 +148,7 @@ class TextBufferTests
 
     void WriteLinesToBuffer(const std::vector<std::wstring>& text, TextBuffer& buffer);
     TEST_METHOD(GetWordBoundaries);
+    TEST_METHOD(MoveByWord);
     TEST_METHOD(GetGlyphBoundaries);
 
     TEST_METHOD(GetTextRects);
@@ -2131,7 +2132,65 @@ void TextBufferTests::GetWordBoundaries()
         VERIFY_ARE_EQUAL(expected, result);
     }
 }
-
+	void TextBufferTests::MoveByWord()
+{
+    COORD bufferSize{ 80, 9001 };
+    UINT cursorSize = 12;
+    TextAttribute attr{ 0x7f };
+    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, _renderTarget);
+    const std::vector<std::wstring> text = { L"word other",
+                                             L"  more   words" };
+    WriteLinesToBuffer(text, *_buffer);
+    struct ExpectedResult
+    {
+        COORD moveForwards;
+        COORD moveBackwards;
+    };
+    struct Test
+    {
+        COORD startPos;
+        ExpectedResult expected;
+    };
+    std::vector<Test> testData = {
+        { {  0, 0 },    {{  5, 0 },      { 0, 0 }} },
+        { {  1, 0 },    {{  5, 0 },      { 1, 0 }} },
+        { {  3, 0 },    {{  5, 0 },      { 3, 0 }} },
+        { {  4, 0 },    {{  5, 0 },      { 4, 0 }} },
+        { {  5, 0 },    {{  2, 1 },      { 0, 0 }} },
+        { {  6, 0 },    {{  2, 1 },      { 0, 0 }} },
+        { { 20, 0 },    {{  2, 1 },      { 0, 0 }} },
+        { { 79, 0 },    {{  2, 1 },      { 0, 0 }} },
+        { {  0, 1 },     {{ 2, 1 },       { 0, 0 }} },
+        { {  1, 1 },     {{ 2, 1 },       { 0, 0 }} },
+        { {  2, 1 },     {{ 9, 1 },       { 5, 0 }} },
+        { {  3, 1 },     {{ 9, 1 },       { 5, 0 }} },
+        { {  5, 1 },     {{ 9, 1 },       { 5, 0 }} },
+        { {  6, 1 },     {{ 9, 1 },       { 5, 0 }} },
+        { {  7, 1 },     {{ 9, 1 },       { 5, 0 }} },
+        { {  9, 1 },     {{ 9, 1 },       { 2, 1 }} },
+        { { 10, 1 },     {{10, 1 },       { 2, 1 }} },
+        { { 20, 1 },     {{20, 1 },       { 2, 1 }} },
+        { { 79, 1 },     {{79, 1 },       { 2, 1 }} },
+    };
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"Data:movingForwards", L"{false, true}")
+    END_TEST_METHOD_PROPERTIES();
+    bool movingForwards;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"movingForwards", movingForwards), L"Get movingForwards variant");
+    const std::wstring_view delimiters = L" ";
+    const COORD lastCharPos = _buffer->GetLastNonSpaceCharacter();
+    for (const auto& test : testData)
+    {
+        Log::Comment(NoThrowString().Format(L"COORD (%hd, %hd)", test.startPos.X, test.startPos.Y));
+        auto pos{ test.startPos };
+        const auto result = movingForwards ?
+                                _buffer->MoveToNextWord(pos, delimiters, lastCharPos) :
+                                _buffer->MoveToPreviousWord(pos, delimiters);
+        const auto expected = movingForwards ? test.expected.moveForwards : test.expected.moveBackwards;
+        VERIFY_ARE_EQUAL(expected, pos);
+        VERIFY_ARE_EQUAL(result, pos != test.startPos);
+    }
+}
 void TextBufferTests::GetGlyphBoundaries()
 {
     struct ExpectedResult
