@@ -108,7 +108,11 @@ try
     return _terminalApi.EraseCharacters(numChars);
 }
 CATCH_LOG_RETURN_FALSE()
-
+bool TerminalDispatch::WarningBell() noexcept
+try {
+    return _terminalApi.WarningBell();
+}
+CATCH_LOG_RETURN_FALSE()
 bool TerminalDispatch::CarriageReturn() noexcept
 try
 {
