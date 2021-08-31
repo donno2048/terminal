@@ -4,9 +4,6 @@
 # Licensed under the MIT license.
 #                                                                              #
 ################################################################################
-
-import sys
-import time # time.sleep is in seconds
 from common import *
 
 # Run this file with:
